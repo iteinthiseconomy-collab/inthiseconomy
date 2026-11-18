@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#f6f8fc">
+    <meta name="description" content="Buku tamu digital untuk mencatat dan mengelola kunjungan.">
+    <title>Buku Tamu Digital</title>
+    <link rel="stylesheet" href="assets/css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+    <script src="assets/js/config.js" defer></script>
+    <script src="assets/js/script.js" defer></script>
+</head>
+
+<body>
+    <div class="app-shell">
+        <header class="topbar">
+            <a class="brand">
+                <img src="assets/img/icon.png" alt="Buku Tamu Digital, formulir tamu">
+            </a>
+            <time id="currentTime" class="current-time" aria-label="Tanggal dan waktu saat ini"></time>
+            <nav class="mode-switch" aria-label="Pilih versi">
+                <a id="guestModeLink" class="mode-link" href="#guest">Tamu</a>
+                <a id="adminModeLink" class="mode-link" href="#admin">Admin</a>
+            </nav>
+        </header>
+
+        <div id="setupNotice" class="error-banner setup-notice" role="alert" hidden></div>
+        <div id="appMessage" class="app-message" role="status" aria-live="polite" hidden></div>
+
+        <main>
+            <section class="welcome">
+                <div>
+                    <p id="welcomeEyebrow" class="eyebrow">BUKU TAMU DIGITAL</p>
+                    <h1 id="welcomeTitle">Selamat datang</h1>
+                    <p id="welcomeCopy" class="welcome-copy">Silakan isi formulir kunjungan. Data akan tersimpan secara
+                        online dan dapat dikelola oleh admin.</p>
+                </div>
+            </section>
+
+            <section id="guestView" class="view">
+                <section class="panel form-panel guest-form-panel">
+                    <div class="panel-heading">
+                        <div>
+                            <p class="eyebrow">FORMULIR KUNJUNGAN</p>
+                            <h2>Isi buku tamu</h2>
+                        </div>
+                        <span class="heading-icon" aria-hidden="true">＋</span>
+                    </div>
+
+                    <form id="guestForm">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="nama">Nama lengkap <span class="required">*</span></label>
+                                <input type="text" id="nama" name="nama" placeholder="masukan nama lengkap"
+                                    autocomplete="name" maxlength="80" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="instansi">Asal / instansi <span class="required">*</span></label>
+                                <input type="text" id="instansi" name="instansi"
+                                    placeholder="Contoh: Umum / PT mencari kebahagiaan" maxlength="100" required>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="alamat">Alamat</label>
+                                <input type="text" id="alamat" name="alamat" placeholder="Kota atau alamat singkat"
+                                    autocomplete="street-address" maxlength="160">
+                            </div>
+                            <div class="form-group">
+                                <label for="noPonsel">No. WhatsApp <span class="required">*</span></label>
+                                <input type="tel" id="noPonsel" name="noPonsel" placeholder="Contoh: 081234567890"
+                                    autocomplete="tel" maxlength="20" required>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="pesan">Pesan / keperluan</label>
+                            <textarea id="pesan" name="pesan" rows="3"
+                                placeholder="Tuliskan pesan atau tujuan kunjungan Anda..." maxlength="500"></textarea>
+                        </div>
+                        <button id="submitGuestButton" class="button button-primary submit-button" type="submit">
+                            <span>Kirim kunjungan</span><span aria-hidden="true">→</span>
+                        </button>
+                        <p id="formMessage" class="form-message" role="status" aria-live="polite"></p>
+                    </form>
+                    <section id="guestTicketPanel" class="ticket-result" hidden>
+                        <h3>Undangan dan QR tiket Anda</h3>
+                        <p id="guestInvitationText"></p>
+                        <canvas id="guestTicketQr" class="ticket-qr" aria-label="QR tiket tamu"></canvas>
+                        <a id="guestWhatsAppLink" class="button button-primary whatsapp-button" target="_blank"
+                            rel="noopener noreferrer">Kirim undangan ke WhatsApp</a>
+                        <p class="ticket-help">Simpan QR ini dan tunjukkan kepada petugas saat tiba. QR hanya dapat
+                            divalidasi satu kali.</p>
+                    </section>
+                </section>
+            </section>
+
+            <section id="adminView" class="view" hidden>
+                <section id="loginPanel" class="panel form-panel login-panel">
+                    <div class="panel-heading">
+                        <div>
+                            <p class="eyebrow">AREA PENGELOLA</p>
+                            <h2>Masuk sebagai admin</h2>
+                        </div>
+                        <span class="heading-icon" aria-hidden="true">⌑</span>
+                    </div>
+                    <form id="loginForm">
+                        <div class="form-group">
+                            <label for="adminEmail">Email admin</label>
+                            <input type="email" id="adminEmail" name="email" autocomplete="username" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="adminPassword">Kata sandi</label>
+                            <input type="password" id="adminPassword" name="password" autocomplete="current-password"
+                                required>
+                        </div>
+                        <button id="loginButton" class="button button-primary" type="submit">Masuk</button>
+                        <p id="loginMessage" class="form-message" role="status" aria-live="polite"></p>
+                    </form>
+                    <p class="login-help">Akun admin dibuat melalui dashboard Supabase, bukan dari halaman ini.</p>
+                </section>
+
+                <div id="adminDashboard" hidden>
+                    <div class="admin-toolbar">
+                        <p id="adminIdentity" class="admin-identity"></p>
+                        <button id="logoutButton" class="button button-outline" type="button">Keluar</button>
+                    </div>
+
+                    <details class="panel admin-entry-panel">
+                        <summary>
+                            <span>
+                                <span class="eyebrow">INPUT ADMIN</span>
+                                <strong>Tambahkan data tamu</strong>
+                            </span>
+                            <span class="heading-icon" aria-hidden="true">＋</span>
+                        </summary>
+                        <form id="adminEntryForm" class="admin-entry-form">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="adminNama">Nama lengkap <span class="required">*</span></label>
+                                    <input type="text" id="adminNama" name="nama" maxlength="80" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="adminInstansi">Asal / instansi <span class="required">*</span></label>
+                                    <input type="text" id="adminInstansi" name="instansi" maxlength="100" required>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="adminAlamat">Alamat</label>
+                                    <input type="text" id="adminAlamat" name="alamat" maxlength="160">
+                                </div>
+                                <div class="form-group">
+                                    <label for="adminNoPonsel">No. WhatsApp <span class="required">*</span></label>
+                                    <input type="tel" id="adminNoPonsel" name="noPonsel" maxlength="20" required>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="adminStatus">Status kehadiran</label>
+                                <select id="adminStatus" name="status" required>
+                                    <option value="Hadir">Hadir</option>
+                                    <option value="Izin">Sakit / Izin</option>
+                                    <option value="Menunggu">Menunggu respons</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="adminPesan">Pesan / keperluan</label>
+                                <textarea id="adminPesan" name="pesan" rows="3" maxlength="500"></textarea>
+                            </div>
+                            <button id="adminEntryButton" class="button button-primary" type="submit">Simpan data
+                                tamu</button>
+                            <p id="adminEntryMessage" class="form-message" role="status" aria-live="polite"></p>
+                        </form>
+                    </details>
+
+                    <section class="qr-panel panel">
+                        <div class="qr-copy">
+                            <p class="eyebrow">BAGIKAN KE TAMU</p>
+                            <h2>QR formulir kunjungan</h2>
+                            <p>Pindai QR ini untuk membuka formulir tamu di ponsel. Pastikan situs sudah dipublikasikan
+                                melalui alamat web yang dapat diakses tamu.</p>
+                            <a id="guestLink" class="guest-link" href="#guest">Buka formulir tamu</a>
+                            <button id="copyLinkButton" class="button button-outline" type="button">Salin
+                                tautan</button>
+                        </div>
+                        <div class="qr-image-wrap">
+                            <canvas id="qrCanvas" class="ticket-qr" aria-label="Kode QR untuk membuka formulir tamu"
+                                hidden></canvas>
+                            <p id="qrMessage" class="qr-message"></p>
+                        </div>
+                    </section>
+
+                    <section class="panel scanner-panel">
+                        <div class="scanner-copy">
+                            <p class="eyebrow">VALIDASI KEHADIRAN</p>
+                            <h2>Scan QR tiket dengan kamera</h2>
+                            <p>Izinkan akses kamera laptop, arahkan QR tamu ke kamera, lalu sistem akan menandai tiket
+                                sebagai hadir. Scanner memerlukan HTTPS atau localhost.</p>
+                            <div class="scanner-actions">
+                                <button id="startScannerButton" class="button button-primary" type="button">Buka
+                                    kamera</button>
+                                <button id="stopScannerButton" class="button button-outline" type="button"
+                                    hidden>Matikan kamera</button>
+                            </div>
+                            <p id="scannerMessage" class="scanner-message" role="status" aria-live="polite"></p>
+                        </div>
+                        <div class="scanner-camera-wrap">
+                            <video id="scannerVideo" playsinline muted hidden></video>
+                        </div>
+                    </section>
+
+                    <section class="stats-grid" aria-label="Ringkasan kunjungan">
+                        <article class="stat-card">
+                            <span class="stat-icon stat-icon-blue" aria-hidden="true">◎</span>
+                            <div>
+                                <p>Total tamu</p><strong id="totalGuests">0</strong>
+                            </div>
+                        </article>
+                        <article class="stat-card">
+                            <span class="stat-icon stat-icon-green" aria-hidden="true">✓</span>
+                            <div>
+                                <p>Hadir</p><strong id="presentGuests">0</strong>
+                            </div>
+                        </article>
+                        <article class="stat-card">
+                            <span class="stat-icon stat-icon-amber" aria-hidden="true">◷</span>
+                            <div>
+                                <p>Izin / menunggu</p><strong id="otherGuests">0</strong>
+                            </div>
+                        </article>
+                    </section>
+
+                    <section class="panel guests-panel">
+                        <div class="panel-heading guest-list-heading">
+                            <div>
+                                <p class="eyebrow">BUKU KUNJUNGAN</p>
+                                <h2>Daftar tamu <span id="listCount" class="count-badge">0</span></h2>
+                            </div>
+                            <button id="exportButton" class="button button-outline" type="button">Unduh CSV
+                                <span aria-hidden="true">↓</span></button>
+                        </div>
+                        <div class="toolbar">
+                            <label class="search-box" for="searchInput">
+                                <span aria-hidden="true">⌕</span>
+                                <input type="search" id="searchInput" placeholder="Cari nama atau instansi..."
+                                    autocomplete="off">
+                            </label>
+                            <label class="filter-label" for="statusFilter">Filter:</label>
+                            <select id="statusFilter" class="status-filter" aria-label="Filter berdasarkan status">
+                                <option value="Semua">Semua status</option>
+                                <option value="Hadir">Hadir</option>
+                                <option value="Izin">Sakit / Izin</option>
+                                <option value="Menunggu">Menunggu respons</option>
+                            </select>
+                            <button id="refreshButton" class="button button-outline refresh-button" type="button">Muat
+                                ulang</button>
+                        </div>
+                        <div id="adminError" class="error-banner" role="alert" hidden></div>
+                        <div id="listContainer" class="guest-list" aria-live="polite"></div>
+                        <div class="list-footer">
+                            <span>Data tersimpan di database online.</span>
+                            <button id="clearButton" class="text-button" type="button">Hapus semua data</button>
+                        </div>
+                    </section>
+                </div>
+            </section>
+        </main>
+
+        <footer class="footer">
+            <span>© 2026 Buku Tamu Digital</span>
+            <span>Data tamu tersimpan dengan aman <span class="footer-heart" aria-hidden="true">♥</span></span>
+        </footer>
+    </div>
+</body>
+
+</html>
